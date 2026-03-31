@@ -10,12 +10,33 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Salesforce MCP Server", version="1.0.0")
 
 
-# ✅ FAST ROOT ENDPOINT (for uptime robot)
+# ✅ ROOT (for uptime robot - FAST response)
 @app.get("/")
 def home():
-    return {"status": "alive"}
+    return JSONResponse(
+        content={"status": "alive"},
+        headers={"Cache-Control": "no-store"}
+    )
 
 
+# ✅ 🔥 ADD THIS (VERY IMPORTANT - fixes 405 HEAD issue)
+@app.head("/")
+def health_check():
+    return JSONResponse(
+        content={"status": "ok"},
+        headers={"Cache-Control": "no-store"}
+    )
+
+
+# OPTIONAL (extra safe ping)
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+# -------------------------------
+# MCP HANDLER
+# -------------------------------
 @app.post("/mcp")
 async def mcp_handler(request: Request):
     try:
@@ -39,7 +60,7 @@ async def mcp_handler(request: Request):
             )
 
         # -------------------------------
-        # 1️⃣ INITIALIZE (FINAL FIX)
+        # INITIALIZE
         # -------------------------------
         if req_type == "initialize":
             return JSONResponse(
@@ -63,7 +84,7 @@ async def mcp_handler(request: Request):
             )
 
         # -------------------------------
-        # 2️⃣ TOOLS LIST
+        # TOOLS LIST
         # -------------------------------
         elif req_type == "tools/list":
             return JSONResponse(
@@ -117,7 +138,7 @@ async def mcp_handler(request: Request):
             )
 
         # -------------------------------
-        # 3️⃣ TOOLS CALL
+        # TOOLS CALL
         # -------------------------------
         elif req_type == "tools/call":
             tool_name = body.get("name")
